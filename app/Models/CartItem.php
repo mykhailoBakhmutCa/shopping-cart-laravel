@@ -23,4 +23,9 @@ class CartItem extends Model
     {
         return round($this->price * $this->quantity, 2);
     }
+
+    public function getTotalPriceFormattedAttribute(): float
+    {
+        return number_format($this->price * $this->quantity, 2, '.', '');
+    }
 }
