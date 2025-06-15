@@ -7,7 +7,6 @@
 </head>
 <body>
     <h1>Init</h1>
-    <h2>sessoinId: {{ $sessionId }}</h2>
     <ul>
         @foreach ($cartItems as $cartItem)
             <li>{{$cartItem->product_name}}</li>
