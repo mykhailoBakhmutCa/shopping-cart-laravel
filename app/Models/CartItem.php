@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class CartItem extends Model
+{
+    protected $fillable = [
+        'session_id',
+        'product_id',
+        'product_name',
+        'price',
+        'quantity',
+    ];
+
+    protected $casts = [
+        'price' => 'decimal:2',
+        'quantity' => 'integer',
+    ];
+
+    public function getTotalPrice(): float 
+    {
+        return $this->price * $this->quantity;
+    }
+}
