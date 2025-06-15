@@ -35,19 +35,25 @@ class CartController extends Controller
         $itemId    = $request->input('item_id');
         $quantity  = $request->input('quantity');
 
-        $cartItem = CartItem::where('id', $itemId)->where('session_id', $sessionId)->first();
+        $cartItem  = CartItem::where('id', $itemId)->where('session_id', $sessionId)->first();
 
         if (!$cartItem) {
-            return response()->json(['success' => false, 'message' => 'Product not found in your cart'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found in your cart',
+            ], 404);
         }
 
         $cartItem->quantity = $quantity;
         $cartItem->save();
 
         $cartItams = $this->getSessionIdCartItems();
-        $totals = $this->calculeteCartTotals($cartItams);
+        $totals    = $this->calculeteCartTotals($cartItams);
 
-        return response()->json(['success' => true, 'totals' => $totals]);
+        return response()->json([
+            'success' => true,
+            'totals'  => $totals,
+        ], 200);
     }
 
     /**
@@ -87,16 +93,16 @@ class CartController extends Controller
             return $item->total_price;
         });
 
-        $gst = round($subTotal * Config::get('taxes.gst', 0), 2);
-        $qst = round($subTotal * Config::get('taxes.qst', 0), 2);
+        $gst = $subTotal * Config::get('taxes.gst', 0);
+        $qst = $subTotal * Config::get('taxes.qst', 0);
 
         $total = $subTotal + $gst + $qst;
 
         return [
-            'subtotal' => $subTotal,
-            'gst'      => $gst,
-            'qst'      => $qst,
-            'total'    => $total,
+            'subtotal' => round($subTotal, 2),
+            'gst'      => round($gst, 2),
+            'qst'      => round($qst, 2),
+            'total'    => round($total, 2),
         ];
     }
 }
