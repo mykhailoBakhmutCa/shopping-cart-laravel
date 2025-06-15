@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateQuantityRequest;
 use App\Models\CartItem;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Session;
 use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
 
 class CartController extends Controller
 {
@@ -21,6 +23,31 @@ class CartController extends Controller
         $totals    = $this->calculeteCartTotals($cartItems);
 
         return view('cart', compact('cartItems', 'totals'));
+    }
+
+    /**
+     * @param UpdateQuantityRequest $request
+     * @return JsonResponse
+     */
+    public function updateQuantity(UpdateQuantityRequest $request): JsonResponse
+    {
+        $sessionId = Session::getId();
+        $itemId    = $request->input('item_id');
+        $quantity  = $request->input('quantity');
+
+        $cartItem = CartItem::where('id', $itemId)->where('session_id', $sessionId)->first();
+
+        if (!$cartItem) {
+            return response()->json(['success' => false, 'message' => 'Product not found in your cart'], 404);
+        }
+
+        $cartItem->quantity = $quantity;
+        $cartItem->save();
+
+        $cartItams = $this->getSessionIdCartItems();
+        $totals = $this->calculeteCartTotals($cartItams);
+
+        return response()->json(['success' => true, 'totals' => $totals]);
     }
 
     /**
