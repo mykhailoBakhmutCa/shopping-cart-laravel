@@ -34,7 +34,7 @@ class CartController extends Controller
         if ($cartItems->isEmpty()) {
             $initialItems = CartItem::where('session_id', 'initial_session')->get();
 
-            $newItems = $initialItems->map(function($initialItem) use ($sessionId) {
+            $newItems = $initialItems->map(function ($initialItem) use ($sessionId) {
                 $newItem             = $initialItem->replicate();
                 $newItem->session_id = $sessionId;
                 return $newItem;
@@ -56,8 +56,8 @@ class CartController extends Controller
      */
     private function calculeteCartTotals(Collection $cartItems): array
     {
-        $subTotal = $cartItems->sum(function($item) {
-            return round($item->price * $item->quantity, 2);
+        $subTotal = $cartItems->sum(function ($item) {
+            return $item->total_price;
         });
 
         $gst = round($subTotal * Config::get('taxes.gst', 0), 2);
