@@ -15,12 +15,12 @@ class CartItem extends Model
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
+        'price'    => 'decimal:2',
         'quantity' => 'integer',
     ];
 
-    public function getTotalPrice(): float 
+    public function getTotalPriceAttribute(): float
     {
-        return $this->price * $this->quantity;
+        return round($this->price * $this->quantity, 2);
     }
 }
