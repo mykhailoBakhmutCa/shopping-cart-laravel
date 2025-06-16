@@ -57,6 +57,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 gstSpan.textContent = data.totals.gst;
                 qst.textContent = data.totals.qst;
                 total.textContent = data.totals.total;
+
+                const itemContainer = document.querySelector(
+                    `.cart-item[data-item-id="${itemId}"]`
+                );
+                if (itemContainer) {
+                    const itemPriceElement =
+                        itemContainer.querySelector(".item-price");
+                    const itemPriceText = itemPriceElement
+                        ? itemPriceElement.textContent
+                        : "";
+                    const itemPrice = parseFloat(
+                        itemPriceText.replace("$", "")
+                    );
+                    console.log("itemPrice", itemPrice);
+                    const newLineTotal = (itemPrice * quantity).toFixed(2);
+                    itemContainer.querySelector(
+                        ".item-line-total"
+                    ).textContent = newLineTotal;
+                }
+            } else {
+                console.error(
+                    "Cart update error (server logic):",
+                    data.message
+                );
+                alert("Cart update error: " + data.message);
             }
         } catch (error) {
             console.log("Error with request", error);
