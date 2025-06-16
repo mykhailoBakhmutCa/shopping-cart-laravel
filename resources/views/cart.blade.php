@@ -11,15 +11,15 @@
 <body>
     <div class="container">
         <h1>Your cart</h1>
-        <div class="cart-item">
+        <div class="cart-items">
             @if ($cartItems->isEmpty())
                 <p>Your cart is empty</p>
             @else
                 @foreach ($cartItems as $cartItem)
                     <div class="cart-item" data-item-id="{{ $cartItem->id }}">
                         <div class="item-details">
-                            <span class="item-name">{{ htmlspecialchars($cartItem->product_name) }}</spa>
-                                <span class="item-price">${{ number_format($cartItem->price, 2, '.', '') }}</span>
+                            <span class="item-name">{{ htmlspecialchars($cartItem->product_name) }}</span>
+                            <span class="item-price">${{ number_format($cartItem->price, 2, '.', '') }}</span>
                         </div>
                         <div class="item-quantity">
                             <label for="quantity-{{ $cartItem->id }}">Quantity:</label>
@@ -38,24 +38,24 @@
         <div class="cart-summary">
             <div class="summary-line">
                 <span>Subtotal:</span>
-                $<span id="subtotal">{{ $totals['subtotal'] }}</span>
+                <span id="subtotal">${{ $totals['subtotal'] }}</span>
             </div>
             <div class="summary-line">
                 <span>GST ({{ Config::get('taxes.gst') * 100 }}%):</span>
-                $<span id="gst">{{ $totals['gst'] }}</span>
+                <span id="gst">${{ $totals['gst'] }}</span>
             </div>
             <div class="summary-line">
                 <span>QST ({{ Config::get('taxes.qst') * 100 }}%):</span>
-                $<span id="qst">{{ $totals['qst'] }}</span>
+                <span id="qst">${{ $totals['qst'] }}</span>
             </div>
             <div class="summary-line total-line">
                 <span>Total:</span>
-                $<span id="total">{{ $totals['total'] }}</span>
+                <span id="total">${{ $totals['total'] }}</span>
             </div>
         </div>
     </div>
 
-    @vite('resources/js/app.js')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </body>
 
 </html>
