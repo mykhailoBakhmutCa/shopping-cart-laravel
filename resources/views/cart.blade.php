@@ -10,23 +10,48 @@
 
 <body>
     <div class="container">
-        <div>
-            @foreach ($cartItems as $cartItem)
-                <p>product name:{{ $cartItem->product_name }}</p>
-                <p>product price:{{ number_format($cartItem->price, 2) }}</p>
-                <label for="quantity-{{ $cartItem->id }}">product quantity:</label>
-                <input type="number" name="quantity-{{ $cartItem->id }}" id="quantity-{{ $cartItem->id }}"
-                    value="{{ $cartItem->quantity }}" min=1 max=50 data-item-id={{ $cartItem->id }}
-                    class="quantity-input">
-                <p>product total price:{{ $cartItem->total_price_formatted }}</p>
-                <br>
-            @endforeach
+        <h1>Your cart</h1>
+        <div class="cart-item">
+            @if ($cartItems->isEmpty())
+                <p>Your cart is empty</p>
+            @else
+                @foreach ($cartItems as $cartItem)
+                    <div class="cart-item" data-item-id="{{ $cartItem->id }}">
+                        <div class="item-details">
+                            <span class="item-name">{{ htmlspecialchars($cartItem->product_name) }}</spa>
+                                <span class="item-price">${{ number_format($cartItem->price, 2, '.', '') }}</span>
+                        </div>
+                        <div class="item-quantity">
+                            <label for="quantity-{{ $cartItem->id }}">Quantity:</label>
+                            <input type="number" name="quantity-{{ $cartItem->id }}" id="quantity-{{ $cartItem->id }}"
+                                value="{{ $cartItem->quantity }}" min="1" max="50"
+                                data-product-id="{{ $cartItem->product_id }}" data-item-id="{{ $cartItem->id }}"
+                                class="quantity-input">
+                        </div>
+                        <div class="item-total-price">
+                            Summ: $<span class="item-line-total">{{ $cartItem->total_price_formatted }}</span>
+                        </div>
+                    </div>
+                @endforeach
+            @endif
         </div>
-        <div>
-            <p>Subtotal: <span id="subtotal">{{ $totals['subtotal'] }}</span></p>
-            <p>GST: <span id="gst">{{ $totals['gst'] }}</span> - {{ Config::get('taxes.gst') * 100 }}%</p>
-            <p>QST: <span id="qst">{{ $totals['qst'] }}</span> - {{ Config::get('taxes.qst') * 100 }}%</p>
-            <p>Total: <span id="total">{{ $totals['total'] }}</span></p>
+        <div class="cart-summary">
+            <div class="summary-line">
+                <span>Subtotal:</span>
+                $<span id="subtotal">{{ $totals['subtotal'] }}</span>
+            </div>
+            <div class="summary-line">
+                <span>GST ({{ Config::get('taxes.gst') * 100 }}%):</span>
+                $<span id="gst">{{ $totals['gst'] }}</span>
+            </div>
+            <div class="summary-line">
+                <span>QST ({{ Config::get('taxes.qst') * 100 }}%):</span>
+                $<span id="qst">{{ $totals['qst'] }}</span>
+            </div>
+            <div class="summary-line total-line">
+                <span>Total:</span>
+                $<span id="total">{{ $totals['total'] }}</span>
+            </div>
         </div>
     </div>
 
