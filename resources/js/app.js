@@ -53,10 +53,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await response.json();
 
             if (data.success) {
-                subtotalSpan.textContent = data.totals.subtotal;
-                gstSpan.textContent = data.totals.gst;
-                qst.textContent = data.totals.qst;
-                total.textContent = data.totals.total;
+                subtotalSpan.textContent = "$" + data.totals.subtotal;
+                gstSpan.textContent = "$" + data.totals.gst;
+                qstSpan.textContent = "$" + data.totals.qst;
+                totalSpan.textContent = "$" + data.totals.total;
 
                 const itemContainer = document.querySelector(
                     `.cart-item[data-item-id="${itemId}"]`
