@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ClearExpiredCarts extends Command
 {
@@ -15,7 +16,7 @@ class ClearExpiredCarts extends Command
      *
      * @var string
      */
-    protected $signature = 'carts:clear-expired-carts';
+    protected $signature = 'carts:clear-expired';
 
     /**
      * The console command description.
@@ -31,34 +32,48 @@ class ClearExpiredCarts extends Command
     {
         $sessionLifetimeMinutes = Config::get('session.lifetime', 120);
         $this->info("LifeTime Session: {$sessionLifetimeMinutes} minuts.");
+        Log::info("LifeTime Session: {$sessionLifetimeMinutes} minuts.");
 
-        $expirationTimestamp = Carbon::now()->subMinutes($sessionLifetimeMinutes)->timestamp;
-        $this->info("Expired timestamm line: " . Carbon::createFromTimestamp($expirationTimestamp)->toDateTimeString());
+        $activeSessionThreshold = Carbon::now()->subMinutes($sessionLifetimeMinutes)->timestamp;
 
-        $expiredSessionIds = [];
+        $this->info("Active sessions line (timestamp): " . $activeSessionThreshold);
+        $this->info("Active sessions line: " . Carbon::createFromTimestamp($activeSessionThreshold)->toDateTimeString());
+        Log::info("Active sessions line: " . Carbon::createFromTimestamp($activeSessionThreshold)->toDateTimeString());
+
+
+        $activeSessionIds = [];
         try {
-            $expiredSessionIds = DB::table('sessions')
-                ->where('last_activity', '<', $expirationTimestamp)
+            $activeSessionIds = DB::table('sessions')
+                ->where('last_activity', '>=', $activeSessionThreshold)
                 ->pluck('id')
                 ->toArray();
+
+            $this->info("Found " . count($activeSessionIds) . " active sessions.");
+            Log::info("Active session_ids (" . count($activeSessionIds) . "): " . implode(', ', $activeSessionIds));
         } catch (\Exception $e) {
-            $this->error("Error getting expired sessions: " . $e->getMessage());
+            $this->error("Error getting active sessions: " . $e->getMessage());
+            Log::error("Error getting active sessions: " . $e->getMessage());
             return Command::FAILURE;
         }
 
-        if (empty($expiredSessionIds)) {
-            $this->info("Expired sessions not found.");
-            return Command::SUCCESS;
-        }
+        $deletedCartItemsCount = CartItem::query()
+            ->whereNot('session_id', 'initial_session')
+            ->where(function ($query) use ($activeSessionIds) {
+                $query->whereNull('session_id')
+                    ->orWhere(function ($q) use ($activeSessionIds) {
+                        $q->whereNotNull('session_id')
+                            ->whereNotIn('session_id', $activeSessionIds);
+                    });
+            })
+            ->delete();
 
-        $this->info("Found " . count($expiredSessionIds) . " expired sessions.");
 
-        $deletedCartItemsCount = CartItem::whereIn('session_id', $expiredSessionIds)->delete();
+        $this->info("Deleted $deletedCartItemsCount cart items.");
+        Log::info("Deleted $deletedCartItemsCount cart items.");
 
-        $deletedSessionsCount = DB::table('sessions')->whereIn('id', $expiredSessionIds)->delete();
+        $this->info("Command carts:clear-expired finish.");
+        Log::info("Command carts:clear-expired finish.");
 
-        $this->info("Deleted $deletedCartItemsCount cart rows.");
-        $this->info("Deleted $deletedSessionsCount expired sessions.");
 
         return Command::SUCCESS;
     }
