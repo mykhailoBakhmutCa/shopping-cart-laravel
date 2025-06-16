@@ -3,24 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateQuantityRequest;
-use App\Models\CartItem;
-use Illuminate\Database\Eloquent\Collection;
+use App\Services\CartService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Session;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
 
 class CartController extends Controller
 {
+    protected CartService $cartService;
+
+    public function __construct(CartService $cartService)
+    {
+        $this->cartService = $cartService;
+    }
+
     /**
      * @param Request $request
      * @return View
      */
     public function index(Request $request)
     {
-        $cartItems = $this->getSessionIdCartItems();
-        $totals    = $this->calculeteCartTotals($cartItems);
+        $cartItems = $this->cartService->getSessionCartItems();
+        $totals    = $this->cartService->calculateCartTotals($cartItems);
 
         return view('cart', compact('cartItems', 'totals'));
     }
@@ -31,11 +35,10 @@ class CartController extends Controller
      */
     public function updateQuantity(UpdateQuantityRequest $request): JsonResponse
     {
-        $sessionId = Session::getId();
-        $itemId    = $request->input('item_id');
-        $quantity  = $request->input('quantity');
+        $itemId   = $request->input('item_id');
+        $quantity = $request->input('quantity');
 
-        $cartItem  = CartItem::where('id', $itemId)->where('session_id', $sessionId)->first();
+        $cartItem = $this->cartService->findCartItem($itemId);
 
         if (!$cartItem) {
             return response()->json([
@@ -44,65 +47,19 @@ class CartController extends Controller
             ], 404);
         }
 
-        $cartItem->quantity = $quantity;
-        $cartItem->save();
+        if (!$this->cartService->updateCartItemQuantity($cartItem, $quantity)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update cart item quantity.',
+            ], 500);
+        }
 
-        $cartItams = $this->getSessionIdCartItems();
-        $totals    = $this->calculeteCartTotals($cartItams);
+        $cartItems = $this->cartService->getSessionCartItems();
+        $totals    = $this->cartService->calculateCartTotals($cartItems);
 
         return response()->json([
             'success' => true,
             'totals'  => $totals,
         ], 200);
-    }
-
-    /**
-     * @return Collection
-     */
-    protected function getSessionIdCartItems(): Collection
-    {
-        $sessionId = Session::getId();
-        $cartItems = CartItem::where('session_id', $sessionId)->get();
-
-        if ($cartItems->isEmpty()) {
-            $initialItems = CartItem::where('session_id', 'initial_session')->get();
-
-            $newItems = $initialItems->map(function ($initialItem) use ($sessionId) {
-                $newItem             = $initialItem->replicate();
-                $newItem->session_id = $sessionId;
-                return $newItem;
-            });
-
-            foreach ($newItems as $newItem) {
-                $newItem->save();
-            }
-
-            return $newItems;
-        }
-
-        return $cartItems;
-    }
-
-    /**
-     * @param Collection<int,CartItem> $cartItems
-     * @return array
-     */
-    private function calculeteCartTotals(Collection $cartItems): array
-    {
-        $subTotal = $cartItems->sum(function ($item) {
-            return $item->total_price;
-        });
-
-        $gst = $subTotal * Config::get('taxes.gst', 0);
-        $qst = $subTotal * Config::get('taxes.qst', 0);
-
-        $total = $subTotal + $gst + $qst;
-
-        return [
-            'subtotal' => round($subTotal, 2),
-            'gst'      => round($gst, 2),
-            'qst'      => round($qst, 2),
-            'total'    => round($total, 2),
-        ];
     }
 }
